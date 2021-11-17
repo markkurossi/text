@@ -36,7 +36,7 @@ var htmls = []string{}
 
 func TestHTML(t *testing.T) {
 	for idx, test := range tests {
-		html := HTML(test.text)
+		html := test.text.HTML()
 		if html != test.html {
 			t.Errorf("%d HTML: got %s, expected %s", idx, html, test.html)
 		}

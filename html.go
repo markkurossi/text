@@ -11,7 +11,7 @@ import (
 )
 
 // HTML creates HTML representation of the text.
-func HTML(text *Text) string {
+func (text *Text) HTML() string {
 	var str string
 
 	for _, span := range text.Spans {
