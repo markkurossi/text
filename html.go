@@ -15,6 +15,13 @@ func (text *Text) HTML() string {
 	var str string
 
 	for _, span := range text.Spans {
+		if span.Link != nil {
+			str += "<a href=\"" + span.Content + "\">"
+			str += span.Link.HTML()
+			str += "</a>"
+			continue
+		}
+
 		if span.Bold {
 			str += "<b>"
 		}

@@ -30,6 +30,11 @@ var tests = []struct {
 		text: New().BoldOblique("BoldOblique"),
 		html: "<b><i>BoldOblique</i></b>",
 	},
+	{
+		text: New().Link("https://www.markkurossi.com/",
+			New().Plain("Markku Rossi")),
+		html: `<a href="https://www.markkurossi.com/">Markku Rossi</a>`,
+	},
 }
 
 var htmls = []string{}

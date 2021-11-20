@@ -83,9 +83,19 @@ func (text *Text) BoldObliquef(format string, a ...interface{}) *Text {
 	return text.BoldOblique(fmt.Sprintf(format, a...))
 }
 
+// Link appends a hyperlink to the text object.
+func (text *Text) Link(url string, link *Text) *Text {
+	text.Spans = append(text.Spans, Span{
+		Content: url,
+		Link:    link,
+	})
+	return text
+}
+
 // Span implements a text span with formatting options.
 type Span struct {
 	Bold    bool
 	Oblique bool
 	Content string
+	Link    *Text
 }
