@@ -4,7 +4,7 @@
 // All rights reserved.
 //
 
-package superscript
+package subscript
 
 import (
 	"fmt"
