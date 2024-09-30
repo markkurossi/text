@@ -4,8 +4,8 @@
 // All rights reserved.
 //
 
-// Package color implements color schemes from the [Colour schemes and
-// templates](https://personal.sron.nl/~pault/).
+// Package color implements color schemes from the
+// https://personal.sron.nl/~pault/ page.
 package color
 
 import (
