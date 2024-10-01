@@ -26,6 +26,9 @@ var (
 	padY    = 10
 	tileW   = 100
 	tileH   = 100
+
+	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
+	black = color.RGBA{0x00, 0x00, 0x00, 0xff}
 )
 
 func main() {
@@ -47,16 +50,11 @@ func main() {
 
 	img := image.NewRGBA(image.Rect(0, 0, widthPx, heightPx))
 
-	white := color.RGBA{
-		R: 0xff,
-		G: 0xff,
-		B: 0xff,
-		A: 0xff,
-	}
-
-	for y := 0; y < heightPx; y++ {
-		for x := 0; x < widthPx; x++ {
-			img.SetRGBA(x, y, white)
+	if false {
+		for y := 0; y < heightPx; y++ {
+			for x := 0; x < widthPx; x++ {
+				img.SetRGBA(x, y, white)
+			}
 		}
 	}
 
@@ -75,20 +73,49 @@ func main() {
 }
 
 func drawScheme(img *image.RGBA, row int, scheme *cs.Scheme) {
-	yOfs := marginY + row*(tileH+padY)
 	for col, c := range scheme.Colors {
-		bg := NRGBAToRGBA(c.BG)
-		fg := NRGBAToRGBA(c.FG)
-
-		xOfs := marginX + col*(tileW+padX)
-		for y := 0; y < tileH; y++ {
-			for x := 0; x < tileW; x++ {
-				img.SetRGBA(xOfs+x, yOfs+y, bg)
-			}
-		}
-
-		drawString(img, xOfs+tileW/2, yOfs+tileH/2, fg, c.Name)
+		printTile(img, row, col, c)
 	}
+	if scheme.BadData != nil {
+		printTile(img, row, len(scheme.Colors), scheme.BadData)
+	}
+}
+
+func printTile(img *image.RGBA, row, col int, c *cs.Color) {
+	bg := NRGBAToRGBA(c.BG)
+	fg := NRGBAToRGBA(c.FG)
+
+	yOfs := marginY + row*(tileH+padY)
+	xOfs := marginX + col*(tileW+padX)
+	for y := 0; y < tileH; y++ {
+		for x := 0; x < tileW; x++ {
+			img.SetRGBA(xOfs+x, yOfs+y, bg)
+		}
+	}
+
+	l := cs.Luminance(c.BG)
+	var fg2 color.RGBA
+	if l > 127 {
+		fg2 = black
+	} else {
+		fg2 = white
+	}
+	_ = fg
+
+	var decY, hexY int
+	if len(c.Name) > 0 {
+		drawString(img, xOfs+tileW/2, yOfs+tileH/4, fg2, c.Name)
+		decY = yOfs + tileH/4*2
+		hexY = yOfs + tileH/4*3
+	} else {
+		decY = yOfs + tileH/3*1
+		hexY = yOfs + tileH/3*2
+	}
+
+	drawString(img, xOfs+tileW/2, decY, fg2,
+		fmt.Sprintf("%d,%d,%d", c.BG.R, c.BG.G, c.BG.B))
+	drawString(img, xOfs+tileW/2, hexY, fg2,
+		fmt.Sprintf("%02X%02X%02X", c.BG.R, c.BG.G, c.BG.B))
 }
 
 func NRGBAToRGBA(c color.NRGBA) color.RGBA {
@@ -102,7 +129,7 @@ func NRGBAToRGBA(c color.NRGBA) color.RGBA {
 }
 
 func drawString(img *image.RGBA, x, y int, c color.RGBA, str string) {
-	wPx := len(str) * 7
+	wPx := len(str) * basicfont.Face7x13.Advance
 	hPx := basicfont.Face7x13.Ascent / 2
 
 	point := fixed.Point26_6{fixed.I(x - wPx/2), fixed.I(y + hPx)}
