@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"os"
 
@@ -74,23 +75,32 @@ func main() {
 
 func drawScheme(img *image.RGBA, row int, scheme *cs.Scheme) {
 	for col, c := range scheme.Colors {
-		printTile(img, row, col, c)
+		printTile(img, row, col, c, false)
 	}
 	if scheme.BadData != nil {
-		printTile(img, row, len(scheme.Colors), scheme.BadData)
+		printTile(img, row, len(scheme.Colors), scheme.BadData, true)
 	}
 }
 
-func printTile(img *image.RGBA, row, col int, c *cs.Color) {
+func printTile(img *image.RGBA, row, col int, c *cs.Color, circ bool) {
 	bg := NRGBAToRGBA(c.BG)
 	fg := NRGBAToRGBA(c.FG)
 
 	yOfs := marginY + row*(tileH+padY)
 	xOfs := marginX + col*(tileW+padX)
-	for y := 0; y < tileH; y++ {
-		for x := 0; x < tileW; x++ {
-			img.SetRGBA(xOfs+x, yOfs+y, bg)
+
+	if circ {
+		center := image.Point{
+			X: xOfs + tileW/2,
+			Y: yOfs + tileH/2,
 		}
+
+		draw.DrawMask(img, img.Bounds(), &image.Uniform{bg}, image.ZP,
+			&circle{center, tileW / 2}, image.ZP, draw.Over)
+
+	} else {
+		draw.Draw(img, image.Rect(xOfs, yOfs, xOfs+tileW, yOfs+tileH),
+			&image.Uniform{bg}, image.ZP, draw.Src)
 	}
 
 	l := cs.Luminance(c.BG)
@@ -118,6 +128,7 @@ func printTile(img *image.RGBA, row, col int, c *cs.Color) {
 		fmt.Sprintf("%02X%02X%02X", c.BG.R, c.BG.G, c.BG.B))
 }
 
+// NRGBAToRGBA converts NRGBA color to RGBA color.
 func NRGBAToRGBA(c color.NRGBA) color.RGBA {
 	r, g, b, a := c.RGBA()
 	return color.RGBA{
@@ -132,7 +143,10 @@ func drawString(img *image.RGBA, x, y int, c color.RGBA, str string) {
 	wPx := len(str) * basicfont.Face7x13.Advance
 	hPx := basicfont.Face7x13.Ascent / 2
 
-	point := fixed.Point26_6{fixed.I(x - wPx/2), fixed.I(y + hPx)}
+	point := fixed.Point26_6{
+		X: fixed.I(x - wPx/2),
+		Y: fixed.I(y + hPx),
+	}
 	d := &font.Drawer{
 		Dst:  img,
 		Src:  image.NewUniform(c),
@@ -140,4 +154,25 @@ func drawString(img *image.RGBA, x, y int, c color.RGBA, str string) {
 		Dot:  point,
 	}
 	d.DrawString(str)
+}
+
+type circle struct {
+	p image.Point
+	r int
+}
+
+func (c *circle) ColorModel() color.Model {
+	return color.AlphaModel
+}
+
+func (c *circle) Bounds() image.Rectangle {
+	return image.Rect(c.p.X-c.r, c.p.Y-c.r, c.p.X+c.r, c.p.Y+c.r)
+}
+
+func (c *circle) At(x, y int) color.Color {
+	xx, yy, rr := float64(x-c.p.X)+0.5, float64(y-c.p.Y)+0.5, float64(c.r)
+	if xx*xx+yy*yy < rr*rr {
+		return color.Alpha{255}
+	}
+	return color.Alpha{0}
 }
