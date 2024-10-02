@@ -25,8 +25,7 @@ var (
 	marginY = 10
 	padX    = 0
 	padY    = 10
-	tileW   = 100
-	tileH   = 100
+	tileR   = 50
 
 	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
 	black = color.RGBA{0x00, 0x00, 0x00, 0xff}
@@ -44,10 +43,10 @@ func main() {
 			width = w
 		}
 	}
-	widthPx := width*tileW + (width-1)*padX + 2*marginX
+	widthPx := width*tileR*2 + (width-1)*padX + 2*marginX
 
 	height := len(cs.Schemes)
-	heightPx := height*tileH + (height-1)*padY + 2*marginY
+	heightPx := height*tileR*2 + (height-1)*padY + 2*marginY
 
 	img := image.NewRGBA(image.Rect(0, 0, widthPx, heightPx))
 
@@ -86,20 +85,20 @@ func printTile(img *image.RGBA, row, col int, c *cs.Color, circ bool) {
 	bg := NRGBAToRGBA(c.BG)
 	fg := NRGBAToRGBA(c.FG)
 
-	yOfs := marginY + row*(tileH+padY)
-	xOfs := marginX + col*(tileW+padX)
+	yOfs := marginY + row*(tileR*2+padY)
+	xOfs := marginX + col*(tileR*2+padX)
 
 	if circ {
 		center := image.Point{
-			X: xOfs + tileW/2,
-			Y: yOfs + tileH/2,
+			X: xOfs + tileR,
+			Y: yOfs + tileR,
 		}
 
 		draw.DrawMask(img, img.Bounds(), &image.Uniform{bg}, image.ZP,
-			&circle{center, tileW / 2}, image.ZP, draw.Over)
+			&circle{center, tileR}, image.ZP, draw.Over)
 
 	} else {
-		draw.Draw(img, image.Rect(xOfs, yOfs, xOfs+tileW, yOfs+tileH),
+		draw.Draw(img, image.Rect(xOfs, yOfs, xOfs+tileR*2, yOfs+tileR*2),
 			&image.Uniform{bg}, image.ZP, draw.Src)
 	}
 
@@ -114,17 +113,17 @@ func printTile(img *image.RGBA, row, col int, c *cs.Color, circ bool) {
 
 	var decY, hexY int
 	if len(c.Name) > 0 {
-		drawString(img, xOfs+tileW/2, yOfs+tileH/4, fg2, c.Name)
-		decY = yOfs + tileH/4*2
-		hexY = yOfs + tileH/4*3
+		drawString(img, xOfs+tileR, yOfs+tileR*2/4, fg2, c.Name)
+		decY = yOfs + tileR*2/4*2
+		hexY = yOfs + tileR*2/4*3
 	} else {
-		decY = yOfs + tileH/3*1
-		hexY = yOfs + tileH/3*2
+		decY = yOfs + tileR*2/3*1
+		hexY = yOfs + tileR*2/3*2
 	}
 
-	drawString(img, xOfs+tileW/2, decY, fg2,
+	drawString(img, xOfs+tileR, decY, fg2,
 		fmt.Sprintf("%d,%d,%d", c.BG.R, c.BG.G, c.BG.B))
-	drawString(img, xOfs+tileW/2, hexY, fg2,
+	drawString(img, xOfs+tileR, hexY, fg2,
 		fmt.Sprintf("%02X%02X%02X", c.BG.R, c.BG.G, c.BG.B))
 }
 
