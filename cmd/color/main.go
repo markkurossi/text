@@ -27,12 +27,21 @@ var (
 	padY    = 10
 	tileR   = 50
 
+	rPlus  = float64(tileR) + 0.5
+	rMinus = float64(tileR) - 0.5
+
+	aaOut    = rPlus * rPlus
+	aaIn     = rMinus * rMinus
+	aaBorder = aaOut - aaIn
+
 	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
 	black = color.RGBA{0x00, 0x00, 0x00, 0xff}
 )
 
 func main() {
 	var width int
+
+	fmt.Printf("aaIn=%v, aaOut=%v, aaBorder=%v\n", aaIn, aaOut, aaBorder)
 
 	for _, scheme := range cs.Schemes {
 		w := len(scheme.Colors)
@@ -169,9 +178,17 @@ func (c *circle) Bounds() image.Rectangle {
 }
 
 func (c *circle) At(x, y int) color.Color {
-	xx, yy, rr := float64(x-c.p.X)+0.5, float64(y-c.p.Y)+0.5, float64(c.r)
-	if xx*xx+yy*yy < rr*rr {
+	xx, yy := float64(x-c.p.X)+0.5, float64(y-c.p.Y)+0.5
+
+	p := xx*xx + yy*yy
+	if p >= aaOut {
+		return color.Alpha{0}
+	}
+	if p <= aaIn {
 		return color.Alpha{255}
 	}
-	return color.Alpha{0}
+	f := p - aaIn
+	r := f / aaBorder
+
+	return color.Alpha{255 - uint8(255*r)}
 }
