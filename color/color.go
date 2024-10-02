@@ -34,6 +34,7 @@ type Color struct {
 	BG   color.NRGBA
 }
 
+// Luminance computes the color luminance value.
 func Luminance(c color.NRGBA) uint8 {
 	var sum float64
 

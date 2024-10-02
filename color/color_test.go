@@ -31,7 +31,7 @@ func TestBG(t *testing.T) {
 func testSchemeBG(t *testing.T, scheme *Scheme) {
 	fmt.Printf("Scheme %v:\n", scheme.Name)
 	for idx, c := range scheme.Colors {
-		l := luminance(c.BG)
+		l := Luminance(c.BG)
 		var bgName string
 		if l > 128 {
 			bgName = "light"
