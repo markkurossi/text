@@ -66,32 +66,28 @@ func main() {
 
 func drawScheme(img *image.RGBA, row int, scheme *cs.Scheme) {
 	for col, c := range scheme.Colors {
-		printTile(img, row, col, c, false)
+		printTile(img, row, col, c, newOctagon)
 	}
 	if scheme.BadData != nil {
-		printTile(img, row, len(scheme.Colors), scheme.BadData, true)
+		printTile(img, row, len(scheme.Colors), scheme.BadData, newCircle)
 	}
 }
 
-func printTile(img *image.RGBA, row, col int, c *cs.Color, circ bool) {
+func printTile(img *image.RGBA, row, col int, c *cs.Color,
+	mask func(p image.Point, r int) image.Image) {
+
 	bg := NRGBAToRGBA(c.BG)
 	fg := NRGBAToRGBA(c.FG)
 
 	yOfs := marginY + row*(tileR*2+padY)
 	xOfs := marginX + col*(tileR*2+padX)
 
-	if circ {
-		center := image.Point{
-			X: xOfs + tileR,
-			Y: yOfs + tileR,
-		}
-
-		draw.DrawMask(img, img.Bounds(), &image.Uniform{bg}, image.ZP,
-			newCircle(center, tileR), image.ZP, draw.Over)
-	} else {
-		draw.Draw(img, image.Rect(xOfs, yOfs, xOfs+tileR*2, yOfs+tileR*2),
-			&image.Uniform{bg}, image.ZP, draw.Src)
+	center := image.Point{
+		X: xOfs + tileR,
+		Y: yOfs + tileR,
 	}
+	draw.DrawMask(img, img.Bounds(), &image.Uniform{bg}, image.ZP,
+		mask(center, tileR), image.ZP, draw.Over)
 
 	l := cs.Luminance(c.BG)
 	var fg2 color.RGBA
@@ -154,7 +150,7 @@ type circle struct {
 	aaBorder float64
 }
 
-func newCircle(center image.Point, r int) *circle {
+func newCircle(center image.Point, r int) image.Image {
 	rPlus := float64(r) + 0.5
 	rMinus := float64(r) - 0.5
 
@@ -193,4 +189,82 @@ func (c *circle) At(x, y int) color.Color {
 	rel := fract / c.aaBorder
 
 	return color.Alpha{255 - uint8(255*rel)}
+}
+
+type octagon struct {
+	p image.Point
+	r int
+	l float64
+}
+
+func newOctagon(center image.Point, r int) image.Image {
+	return &octagon{
+		p: center,
+		r: r,
+		l: float64(r) * .41421356237309504880,
+	}
+}
+
+func (o *octagon) ColorModel() color.Model {
+	return color.AlphaModel
+}
+
+func (o *octagon) Bounds() image.Rectangle {
+	return image.Rect(o.p.X-o.r, o.p.Y-o.r, o.p.X+o.r, o.p.Y+o.r)
+}
+
+func (o *octagon) At(x, y int) color.Color {
+	xx, yy := float64(x-o.p.X)+0.5, float64(y-o.p.Y)+0.5
+	if xx < 0 {
+		xx = -xx
+	}
+	if yy < 0 {
+		yy = -yy
+	}
+	if xx <= o.l || xx >= float64(o.r) || yy <= o.l || yy >= float64(o.r) {
+		return color.Alpha{255}
+	}
+	diff := xx - (o.l + float64(o.r) - yy)
+
+	if diff <= 0 {
+		return color.Alpha{255}
+	}
+	if diff >= 1 {
+		return color.Alpha{0}
+	}
+	return color.Alpha{uint8(255 * diff)}
+}
+
+type square struct {
+	p image.Point
+	r int
+}
+
+func newSquare(center image.Point, r int) image.Image {
+	return &square{
+		p: center,
+		r: r,
+	}
+}
+
+func (s *square) ColorModel() color.Model {
+	return color.AlphaModel
+}
+
+func (s *square) Bounds() image.Rectangle {
+	return image.Rect(s.p.X-s.r, s.p.Y-s.r, s.p.X+s.r, s.p.Y+s.r)
+}
+
+func (s *square) At(x, y int) color.Color {
+	xx, yy := float64(x-s.p.X)+0.5, float64(y-s.p.Y)+0.5
+	if xx < 0 {
+		xx = -xx
+	}
+	if yy < 0 {
+		yy = -yy
+	}
+	if xx <= float64(s.r) || yy <= float64(s.r) {
+		return color.Alpha{255}
+	}
+	return color.Alpha{0}
 }
