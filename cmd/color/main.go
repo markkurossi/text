@@ -41,8 +41,6 @@ var (
 func main() {
 	var width int
 
-	fmt.Printf("aaIn=%v, aaOut=%v, aaBorder=%v\n", aaIn, aaOut, aaBorder)
-
 	for _, scheme := range cs.Schemes {
 		w := len(scheme.Colors)
 		if scheme.BadData != nil {
@@ -58,14 +56,6 @@ func main() {
 	heightPx := height*tileR*2 + (height-1)*padY + 2*marginY
 
 	img := image.NewRGBA(image.Rect(0, 0, widthPx, heightPx))
-
-	if false {
-		for y := 0; y < heightPx; y++ {
-			for x := 0; x < widthPx; x++ {
-				img.SetRGBA(x, y, white)
-			}
-		}
-	}
 
 	for row, scheme := range cs.Schemes {
 		drawScheme(img, row, scheme)
@@ -105,7 +95,6 @@ func printTile(img *image.RGBA, row, col int, c *cs.Color, circ bool) {
 
 		draw.DrawMask(img, img.Bounds(), &image.Uniform{bg}, image.ZP,
 			&circle{center, tileR}, image.ZP, draw.Over)
-
 	} else {
 		draw.Draw(img, image.Rect(xOfs, yOfs, xOfs+tileR*2, yOfs+tileR*2),
 			&image.Uniform{bg}, image.ZP, draw.Src)
