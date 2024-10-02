@@ -27,13 +27,6 @@ var (
 	padY    = 10
 	tileR   = 50
 
-	rPlus  = float64(tileR) + 0.5
-	rMinus = float64(tileR) - 0.5
-
-	aaOut    = rPlus * rPlus
-	aaIn     = rMinus * rMinus
-	aaBorder = aaOut - aaIn
-
 	white = color.RGBA{0xff, 0xff, 0xff, 0xff}
 	black = color.RGBA{0x00, 0x00, 0x00, 0xff}
 )
@@ -94,7 +87,7 @@ func printTile(img *image.RGBA, row, col int, c *cs.Color, circ bool) {
 		}
 
 		draw.DrawMask(img, img.Bounds(), &image.Uniform{bg}, image.ZP,
-			&circle{center, tileR}, image.ZP, draw.Over)
+			newCircle(center, tileR), image.ZP, draw.Over)
 	} else {
 		draw.Draw(img, image.Rect(xOfs, yOfs, xOfs+tileR*2, yOfs+tileR*2),
 			&image.Uniform{bg}, image.ZP, draw.Src)
@@ -154,8 +147,28 @@ func drawString(img *image.RGBA, x, y int, c color.RGBA, str string) {
 }
 
 type circle struct {
-	p image.Point
-	r int
+	p        image.Point
+	r        int
+	aaOut    float64
+	aaIn     float64
+	aaBorder float64
+}
+
+func newCircle(center image.Point, r int) *circle {
+	rPlus := float64(r) + 0.5
+	rMinus := float64(r) - 0.5
+
+	aaOut := rPlus * rPlus
+	aaIn := rMinus * rMinus
+	aaBorder := aaOut - aaIn
+
+	return &circle{
+		p:        center,
+		r:        r,
+		aaOut:    aaOut,
+		aaIn:     aaIn,
+		aaBorder: aaBorder,
+	}
 }
 
 func (c *circle) ColorModel() color.Model {
@@ -170,14 +183,14 @@ func (c *circle) At(x, y int) color.Color {
 	xx, yy := float64(x-c.p.X)+0.5, float64(y-c.p.Y)+0.5
 
 	p := xx*xx + yy*yy
-	if p >= aaOut {
+	if p >= c.aaOut {
 		return color.Alpha{0}
 	}
-	if p <= aaIn {
+	if p <= c.aaIn {
 		return color.Alpha{255}
 	}
-	f := p - aaIn
-	r := f / aaBorder
+	fract := p - c.aaIn
+	rel := fract / c.aaBorder
 
-	return color.Alpha{255 - uint8(255*r)}
+	return color.Alpha{255 - uint8(255*rel)}
 }
