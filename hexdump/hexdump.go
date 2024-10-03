@@ -8,19 +8,27 @@ package hexdump
 
 import (
 	"bytes"
+	"errors"
 	"regexp"
 )
 
-var reLine = regexp.MustCompilePOSIX(`^[[:xdigit:]]{8}(([[:blank:]]+[[:xdigit:]]{2}){1,16}).*$`)
-var reByte = regexp.MustCompilePOSIX(`[[:blank:]]+([[:xdigit:]]{2})`)
+var reLine = regexp.MustCompilePOSIX(`^[[:xdigit:]]{7,8}(([[:blank:]]+[[:xdigit:]]+){1,16}).*$`)
+var reByte = regexp.MustCompilePOSIX(`([[:xdigit:]]{2})`)
 
 // Parse parses data from the encoding/hex.Dump formatted output.
 func Parse(data []byte) ([]byte, error) {
 	var result bytes.Buffer
 
+	if len(data) == 0 {
+		return nil, nil
+	}
+
 	for {
 		match := reLine.FindSubmatchIndex(data)
 		if match == nil {
+			if result.Len() == 0 {
+				return nil, errors.New("invalid hexdump data")
+			}
 			return result.Bytes(), nil
 		}
 		bytes := data[match[2]:match[3]]
