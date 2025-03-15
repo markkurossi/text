@@ -2,6 +2,6 @@
 
 Text handling utilities.
 
-# TODO
+## [Qualitative Color Schemes](https://personal.sron.nl/~pault/)
 
- - Add [qualitative color schemes](https://personal.sron.nl/~pault/)
+<img align="center" src="schemes.png">
